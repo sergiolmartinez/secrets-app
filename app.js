@@ -1,10 +1,11 @@
 //jshint esversion:6
 require("dotenv").config();
+const SHA256 = require("crypto-js/sha256");
 const express = require("express");
 const bodyParser = require("body-parser");
 const ejs = require("ejs");
 const mongoose = require("mongoose");
-const encrypt = require("mongoose-encryption");
+// const encrypt = require("mongoose-encryption");
 
 const { Schema } = mongoose;
 
@@ -28,7 +29,7 @@ async function main() {
     });
 
     const secret = process.env.SECRET;
-    userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
+    // userSchema.plugin(encrypt, {secret: secret, encryptedFields: ["password"]});
 
     const User = mongoose.model("User", userSchema);
  
@@ -47,7 +48,7 @@ async function main() {
     app.post('/register', async (req, res) => {
         const newUser = new User({
             email: req.body.username,
-            password: req.body.password
+            password: SHA256(req.body.password).toString()
         });
         await newUser.save()
         .then(()=> {
@@ -59,7 +60,7 @@ async function main() {
 
     app.post('/login', async (req, res) => {
         const username = req.body.username;
-        const password = req.body.password;
+        const password = SHA256(req.body.password).toString();
 
         User.findOne({email: username})
         .then((foundUser) => {
