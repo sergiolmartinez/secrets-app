@@ -43,7 +43,8 @@ async function main() {
   const userSchema = new mongoose.Schema({
     email: String,
     password: String,
-    googleId: String
+    googleId: String,
+    secret: String
     });
 
     userSchema.plugin(passportLocalMongoose);
@@ -108,13 +109,44 @@ async function main() {
     });
 
     // Method to stop the cache from being stored in the browser and catch errors
-    app.get("/secrets", function(req, res) {
+    app.get("/secrets",function(req,res){
+        User.find({"secret":{$ne:null}})
+        .then(function (foundUsers) {
+          res.render("secrets",{usersWithSecrets:foundUsers});
+          })
+        .catch(function (err) {
+          console.log(err);
+          })
+    });
+
+    app.get("/submit", function(req, res) {
         if (req.isAuthenticated()) {
-            res.render("secrets");
+            res.render("submit");
         } else {
-            res.redirect("/login");
+            res.redirect("login");
         }
-    })
+    });
+
+    //Method to submit a secret and catch errors
+    app.post("/submit", function (req, res) {
+        // console.log(req.user);
+        User.findById(req.user)
+          .then(foundUser => {
+            if (foundUser) {
+              foundUser.secret = req.body.secret;
+              return foundUser.save();
+            }
+            return null;
+          })
+          .then(() => {
+            res.redirect("/secrets");
+          })
+          .catch(err => {
+            console.log(err);
+          });
+    });
+
+
 
 
     //Method to logout and redirect to home page and catch errors
